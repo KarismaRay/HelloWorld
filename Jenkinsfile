@@ -8,33 +8,53 @@ pipeline
            steps {
                git branch: 'master', url: 'https://github.com/KarismaRay/hello-world.git'
                  }
-       
+        }
        stage('please test code')
        { 
           steps {
-           withMaven(jdk: 'locakjdk-1.8', maven: 'localmaven') {
+           withMaven(jdk: 'locakjdk-1.8', maven: 'localmaven') 
+		    {
             sh 'mvn test'
-    }
-       }
-
+            }
+                }
+    
        }
         stage('please build code')
-       { steps {
-           withMaven(jdk: 'locakjdk-1.8', maven: 'localmaven') {
-            sh 'mvn package'
-}
-       }
+       { 
+	     steps {
+           withMaven(jdk: 'locakjdk-1.8', maven: 'localmaven') 
+		    {
+             sh 'mvn package'
+            }
+               }
 
        }
       
-      stage('deploy to tomcat')
-       {
-         steps
-          {
-            sshagent(['3d7efb47-ebdb-41fc-ba84-64adcad73b85']) {
-            sh 'scp -o StrictHostKeyChecking=no */target/webapp.war ec2-user@172.31.9.195:/var/lib/tomcat/webapps'
-}
-}
-}
+	    stage ('dockerize:Build the  image') 
+	   {
+	  
+          sh 'docker build -t kray992/HelloWorld_app:1.0.0 .'
+	   }
+
+        stage ('Push Docker image to DockerHub') 
+		{
+		 steps{
+               withCredentials([string(credentialsId: 'dockerhubaccount', variable: 'dockerhubaccount')]) 
+			   {
+                sh "docker login -u kray992 -p ${dockerhubaccount}"
+               }
+               sh 'docker push kray992/HelloWorld_app:1.0.0'
+	          }
+        }
+
+        stage ('Deploy to Dev') 
+		{
+		
+           def dockerRun = 'docker run -d -p 9000:8080 --name my-tomcat-app kray992/HelloWorld_app:1.0.0'
+           sshagent(['deploy-to-dev-docker']) 
+		   {
+           sh "ssh -o StrictHostKeyChecking=no ec2-user@172.31.46.1 ${dockerRun}"
+           }
+        }
    } 
 }

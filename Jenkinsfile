@@ -6,7 +6,7 @@ pipeline
        stage('scm checkout')
        {
            steps {
-               git branch: 'master', url: 'https://github.com/KarismaRay/hello-world.git'
+               git branch: 'master', url: 'https://github.com/KarismaRay/HelloWorld.git'
                  }
         }
        stage('please test code')
